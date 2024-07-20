@@ -6,7 +6,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 
 app.use(cors({
-  origin: ['http://localhost:3000','https://indazetu-client.onrender.com'],
+  origin: ['http://localhost:3000','https://indazetu-client.onrender.com','https://indazetu.com'],
   credentials: true
 }));
 
