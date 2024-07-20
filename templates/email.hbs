@@ -1,0 +1,93 @@
+<!-- templates/email.hbs -->
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>{{subject}}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    .container {
+      width: 80%;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      text-align: center;
+      padding: 10px 0;
+      background-color: #007bff;
+      color: #fff;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 10px 0;
+      background-color: #f1f1f1;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header" style="background-color: #f2f2f2; padding: 15px 20px; display: flex; align-items: center;">
+      <img src="https://via.placeholder.com/150x50?text=Your+Logo" alt="Logo"
+        style="width: 50px; height: 50px; margin-right: 15px;" />
+      <h1 style="font-weight: bold; color: #428bca; font-size: 20px; margin: 0;">INDAZETU</h1>
+    </div>
+
+    <div class="content">
+      <p>{{content}}</p>
+      {{{htmlContent}}} <!-- Triple curly braces to prevent escaping HTML content -->
+    </div>
+    <div class="footer">
+      <p>Thank you for choosing us!</p>
+    </div>
+  </div>
+</body>
+<script>
+  // Function to handle server response and open a new window if necessary
+  function handleServerResponse(response) {
+    if (response.redirectUrl) {
+      window.open(response.redirectUrl, '_blank'); // Open in a new window
+    } else if (!response.success) {
+      console.error(response.message);
+    }
+  }
+
+  // Example AJAX request to create-shop endpoint
+  fetch('/api/v2/shop/create-shop', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      name: 'ShopName',
+      email: 'shop@example.com',
+      password: 'password',
+      avatar: 'avatar_url',
+      address: 'address',
+      location: 'location',
+      working_hours: '9-5'
+    })
+  })
+  .then(response => response.json())
+  .then(data => handleServerResponse(data))
+  .catch(error => console.error('Error:', error));
+</script>
+
+
+</html>
