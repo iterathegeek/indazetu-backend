@@ -43,6 +43,8 @@ const subscription = require("./controller/subscription");
 const businessDocs = require("./controller/businessDocs");
 const pickupStation = require("./controller/pickupStation");
 const shippingCost = require("./controller/shippingCosts");
+const pageTracker = require("./controller/tracker");
+
 
 app.use("/api/v2/user", user);
 app.use("/api/v2/conversation", conversation);
@@ -62,6 +64,7 @@ app.use("/api/v2/businessdocs", businessDocs);
 // Routes
 app.use('/api/v2/pickupStation', pickupStation);
 app.use('/api/v2/shippingCost', shippingCost);
+app.use('/api/v2/tracker', pageTracker);
 
 // it's for ErrorHandling
 app.use(ErrorHandler);
