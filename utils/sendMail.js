@@ -8,14 +8,24 @@ const path = require('path');
 const Shop = require("../model/shop");
 
 
+// var transporter = nodemailer.createTransport({
+//   host: "sandbox.smtp.mailtrap.io",
+//   port: 2525,
+//   auth: {
+//     user: "0383ab8026ca26",
+//     pass: "479a5eebb9cded"
+//   }
+// });
 var transporter = nodemailer.createTransport({
-  host: "sandbox.smtp.mailtrap.io",
-  port: 2525,
+  host: "smtp.zoho.com",
+  port: 587,
   auth: {
-    user: "0383ab8026ca26",
-    pass: "479a5eebb9cded"
+    user: "adrian@indazetu.com",
+    pass: "sidundo@36"
   }
 });
+
+
 // Configure Handlebars
 const handlebarOptions = {
   viewEngine: {
@@ -38,36 +48,53 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <style>
-      body {
-        font-family: 'Helvetica Neue', Arial, sans-serif;
-        color: #333;
-        line-height: 1.6;
-        padding: 20px;
-        background-color: #f9f9f9;
-      }
-      .container {
-        max-width: 1000px;
-        margin: 0 auto;
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      }
-      .header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-      }
-      .header img {
-        width: 50px;
-        margin-right: 15px;
-      }
-      .header h2 {
-        font-size: 24px;
-        color: #333;
-        margin: 0;
-      }
+    body {
+      font-family: 'Roboto', sans-serif;
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+      background-color: #f9f9f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px  #FFDBBB;;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+      background-color: #f7f7f7;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .header img {
+      width: 40px;
+      height: 40px;
+      margin-right: 15px;
+    }
+    
+    .header h2 {
+      font-size: 26px;
+      color: #333;
+      margin: 0;
+      flex-grow: 1;
+      font-weight: 600;
+    }
+    
       .message {
         font-size: 16px;
         color: #333;
@@ -76,6 +103,19 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
         border-radius: 8px;
         margin-bottom: 20px;
       }
+      @media (max-width: 600px) {
+        .header {
+          flex-direction: column;
+          align-items: flex-start;
+          padding: 10px 15px;
+        }
+      
+        .header h2 {
+          font-size: 22px;
+          margin-top: 10px;
+        }
+      }
+      
       @media only screen and (max-width: 800px) {
         .container {
           padding: 10px;
@@ -95,10 +135,12 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
   </head>
   <body>
     <div class="container">
-      <div class="header">
-        <img src="https://dummyimage.com/50x50/000/fff&text=Logo" alt="Logo">
-        <h2>${subject}</h2>
-      </div>
+    <div class="header">
+    <img src="https://img.icons8.com/ios-filled/50/000000/key.png" alt="Activation Icon">
+    <h2>${subject}</h2>
+  </div>
+  
+  </div>
       <div class="message">
         ${message}
       </div>
@@ -336,7 +378,7 @@ const sendMail = async (options) => {
 
     // Email options
     const mailOptions = {
-      from: 'sheerikie@gmail.com',
+      from: 'adrian@indazetu.com',
       to: email,
       subject: subject,
       template: 'email', // The name of the template file without extension
@@ -376,18 +418,6 @@ const sendMail = async (options) => {
     };
   }
 };
-
-// // Usage example
-// const options = {
-//   email: 'recipient@example.com',
-//   subject: 'Order Notification',
-//   message: 'You have a new order!',
-//   order: null,
-// };
-
-// sendMail(options).then((response) => {
-//   console.log('Response:', response);
-// });
 
 
 module.exports = sendMail;

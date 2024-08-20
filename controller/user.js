@@ -8,6 +8,7 @@ const jwt = require("jsonwebtoken");
 const sendMail = require("../utils/sendMail");
 const sendToken = require("../utils/jwtToken");
 const { isAuthenticated, isAdmin } = require("../middleware/auth");
+const bcrypt = require("bcryptjs");
 
 // create user
 router.post("/create-user", async (req, res, next) => {
@@ -97,7 +98,7 @@ router.post(
       if (!newUser) {
         return next(new ErrorHandler("Invalid token", 400));
       }
-      const { name, email, password, avatar,phoneNumber } = newUser;
+      const { name, email, password, avatar, phoneNumber } = newUser;
 
       let user = await User.findOne({ email });
 
@@ -111,9 +112,9 @@ router.post(
         password,
         phoneNumber,
       });
-      
+
       sendToken(user, 201, res);
-      
+
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
     }
@@ -173,6 +174,40 @@ router.get(
     }
   })
 );
+router.post(
+  '/reauthenticate',
+  // isAuthenticated,
+  catchAsyncErrors(async (req, res, next) => {
+    let { userId, password } = req.body;
+    console.log('reauthenticate', req.body);
+
+    if (!userId || !password) {
+      return next(new ErrorHandler('Please provide all fields', 400));
+    }
+
+    const user = await User.findById(userId).select("+password");
+
+    if (!user) {
+      return next(new ErrorHandler('User not found', 404));
+    }
+
+    console.log('reauthenticate2', user);
+
+    const isPasswordMatched = await user.comparePassword(password);
+
+    console.log('reauthenticate3', isPasswordMatched);
+
+    if (!isPasswordMatched) {
+      return next(new ErrorHandler('Incorrect password', 401));
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Reauthenticated successfully',
+    });
+  })
+);
+
 
 // log out user
 router.get(
@@ -421,6 +456,8 @@ router.delete(
         );
       }
 
+
+
       const imageId = user.avatar.public_id;
 
       await cloudinary.v2.uploader.destroy(imageId);
@@ -434,6 +471,97 @@ router.delete(
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
     }
+  })
+);
+
+// Anonymize user data
+router.patch(
+  '/user/:id/anonymize',
+  catchAsyncErrors(async (req, res, next) => {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return next(new ErrorHandler('User not found', 404));
+    }
+
+    user.name = 'Deleted User';
+    user.email = `deleted_${user._id}@example.com`;
+    user.password = undefined; // or hash some default password
+    // anonymize other sensitive fields as necessary
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'User anonymized successfully',
+    });
+  })
+);
+// Suspend user
+router.put(
+  '/suspend',
+  catchAsyncErrors(async (req, res, next) => {
+    const { reason, userId } = req.body;
+   
+    
+    if (!reason || !userId) {
+      return next(new ErrorHandler('Missing required fields', 400));
+    }
+  
+    const user = await User.findById(userId);
+    
+    user.isSuspended = !user.isSuspended;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `User ${user.isSuspended ? 'suspended' : 'unsuspended'} successfully`,
+    });
+  })
+);
+
+// Delete user account
+router.delete(
+  '/delete',
+  catchAsyncErrors(async (req, res, next) => {
+
+    const { reason, userId } = req.body;
+   
+    if (!reason || !userId) {
+      return next(new ErrorHandler('Missing required fields', 400));
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return next(new ErrorHandler('User not found', 404));
+    }
+
+
+    if (!user) {
+      return next(new ErrorHandler('User not found', 404));
+    }
+
+    user.name = 'Deleted User';
+    user.email = `deleted_${user.email}@example.com`;
+    user._id = `deleted_${user._id}`;
+    // user.password = undefined; // or hash some default password
+    // anonymize other sensitive fields as necessary
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'User anonymized successfully',
+    });
+
+
+    // Optionally log the reason for deletion
+    //await DeletionLog.create({ userId: user._id, reason });
+
+    //await user.remove();
+
+    res.status(200).json({
+      success: true,
+      message: 'Account deleted successfully',
+    });
   })
 );
 
