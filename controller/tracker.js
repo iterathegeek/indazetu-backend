@@ -1,50 +1,120 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
+const { google } = require('googleapis');
+const fs = require('fs');
+const path = require('path');
 
-// Define a schema for the page event
-const pageEventSchema = new mongoose.Schema({
-  device: Object,
-  location: Object,
-  timestamp: Date,
-  page: String,
-  referrer: String,
-  userAgent: String,
-  impressions: Number,
-  visitors: Number,
-  phoneViews: Number,
-  chatRequests: Number
-});
+// Use the Google Analytics Data API
+const analyticsdata = google.analyticsdata('v1beta');
 
-const PageEvent = mongoose.model('PageEvent', pageEventSchema);
+router.get('/analytics', async (req, res) => {
+  const { sellerId, startDate, endDate } = req.query;
 
-// Endpoint to track page events
-router.post('/track-event', async (req, res) => {
-  const eventData = req.body;
-  const pageEvent = new PageEvent(eventData);
-  console.log('Tracking data received:', eventData);
-  try {
-    await pageEvent.save();
-    res.status(201).json({ success: true, event: pageEvent });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+  if (!sellerId) {
+    return res.status(400).json({ error: 'sellerId is required' });
   }
-});
 
-
-// Endpoint to fetch page event data within a date range
-router.get('/events', async (req, res) => {
-  const { start, end } = req.query;
-  console.log('pageEven',start,end)
   try {
-    const events = await PageEvent.find({
-      timestamp: { $gte: new Date(start), $lte: new Date(end) }
+
+    // Read service account credentials
+  //  const credentialsPath = path.join(__dirname, '../dialogflow-cx-project-421407-6c0e71d6646c.json');
+    const credentialsPath = path.join(__dirname,process.env.ga_tracker );
+
+    const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'));
+
+    // Create JWT client for authentication
+    const jwtClient = new google.auth.JWT({
+      email: credentials.client_email,
+      key: credentials.private_key,
+      scopes: ['https://www.googleapis.com/auth/analytics.readonly'],
+      project_id: credentials.project_id,
     });
-    console.log('pageEven',events)
-    res.json(events);
+
+    // Authorize the client
+    await jwtClient.authorize();
+
+    const reportRequest = {
+      property: 'properties/226579595', // Replace with your actual GA4 Property ID
+      dateRanges: [{ startDate: startDate || '2024-01-01', endDate: endDate || '2024-01-31' }],
+      dimensions: [
+        { name: 'eventName' },
+        { name: 'customEvent:sellerId' },
+        { name: 'date' },
+        { name: 'city' },
+        { name: 'pagePath' },
+        { name: 'pageTitle' },
+        // { name: "activeUsers" },
+        // { name: "sessions" },
+        // { name: "newUsers" },
+        // { name: "screenPageViews" },
+        // { name: "engagementRate" },
+        // { name: "conversions" },
+        // { name: "transactions" },
+        //{ name: "bounceRate" },
+        // { name: "TotalUsers" }
+
+      ],
+      metrics: [{ name: 'eventCount'},
+      { name: 'newUsers' },
+      { name: 'screenPageViews' },
+      { name: 'engagementRate' },
+      { name: 'conversions' },
+      { name: 'transactions' },
+      { name: 'bounceRate' },
+      { name: 'totalUsers' }],
+      dimensionFilter: {
+        andGroup: {
+          expressions: [
+            {
+              filter: {
+                fieldName: 'eventName',
+                stringFilter: {
+                  matchType: 'EXACT',
+                  value: 'page_view', // Filter by the 'page_view' event
+                }
+              }
+            },
+            {
+              filter: {
+                fieldName: 'customEvent:sellerId', // Ensure this matches the correct field name
+                stringFilter: {
+                  matchType: 'EXACT',
+                  value: sellerId, // Filter by the seller ID you want
+                }
+              }
+            }
+          ]
+        }
+      }
+    };
+
+
+    const response = await analyticsdata.properties.runReport({
+      property: reportRequest.property,
+      requestBody: reportRequest,
+      auth: jwtClient,
+    });
+
+    res.json(response.data);
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Error fetching Firebase Analytics data:', error);
+    // Respond with a 500 status code and error message
+    res.status(500).json({ error: 'Error fetching Firebase Analytics data' });
   }
+});
+
+// Global error handler to catch unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Handle the error gracefully (e.g., log it, notify an admin, etc.)
+});
+
+// Global error handler for uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // Handle the error gracefully (e.g., log it, notify an admin, etc.)
+  // Optionally, exit the process with a non-zero exit code
+  process.exit(1);
 });
 
 module.exports = router;
