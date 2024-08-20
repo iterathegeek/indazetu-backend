@@ -12,12 +12,20 @@ const generateOTP = require("../utils/otp")
 const User = require("../model/user");
 const sendToken = require("../utils/jwtToken");
 
+// var transporter = nodemailer.createTransport({
+//   host: "sandbox.smtp.mailtrap.io",
+//   port: 2525,
+//   auth: {
+//     user: "0383ab8026ca26",
+//     pass: "479a5eebb9cded"
+//   }
+// });
 var transporter = nodemailer.createTransport({
-  host: "sandbox.smtp.mailtrap.io",
-  port: 2525,
+  host: "smtp.zoho.com",
+  port: 587,
   auth: {
-    user: "0383ab8026ca26",
-    pass: "479a5eebb9cded"
+    user: "adrian@indazetu.com",
+    pass: "sidundo@36"
   }
 });
 // Configure Handlebars
@@ -120,10 +128,10 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
 <body>
   <div class="container">
     <div class="header">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-key">
+      <svg style="margin-left:9px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-key">
         <path d="M3 11l18-9-9 18-6-6-3 3v-6H3z"></path>
       </svg>
-      <h2>${subject}</h2>
+      <h2 style="margin-right:9px">${subject}</h2>
     </div>
     <div class="message">
       ${message}
@@ -365,7 +373,7 @@ router.post('/email', async (req, res) => {
     }
     // Email options
     const mailOptions = {
-      from: 'sheerikie@gmail.com',
+      from: 'support@indazetu.com',
       to: recipient,
       subject: subject,
       template: 'email', // The name of the template file without extension
@@ -493,7 +501,7 @@ router.post('/send-otp', async (req, res) => {
     const message = `Your OTP code is ${otp}`;
     const htmlContent = await generateMessageEmailTemplate({ subject, message });
     const mailOptions = {
-      from: 'sheerikie@gmail.com',
+      from: 'support@indazetu.com',
       to: email,
       subject: subject,
       template: 'email', // The name of the template file without extension

@@ -553,6 +553,26 @@ router.get(
   })
 );
 
+// all sellers --- for header
+router.get(
+  "/all-sellers",
+  // isAuthenticated,
+  // isAdmin("Admin"),
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const sellers = await Shop.find().sort({
+        createdAt: -1,
+      });
+      res.status(201).json({
+        success: true,
+        sellers,
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
 // delete seller ---admin
 router.delete(
   "/delete-seller/:id",
@@ -892,35 +912,6 @@ router.put(
     }
   })
 );
-// update shipping cost
-// router.put(
-//   "/update-shipping-cost/:id",
-//   catchAsyncErrors(async (req, res, next) => {
-//     try {
-//       const { shop, shippingInputs } = req.body;
-
-//       // Find the shipping cost document
-//       const shipping = await ShippingCost.findOneAndUpdate(
-//         { shop, _id: req.params.id },
-//         { shippingInputs },
-//         { new: true } // Return the updated document
-//       );
-
-//       if (!shipping) {
-//         return next(new ErrorHandler("Shipping doesn't exist", 400));
-//       }
-
-//       // No need to call shipping.save() as pre-save middleware handles updates
-
-//       res.status(201).json({
-//         success: true,
-//         shop,
-//       });
-//     } catch (error) {
-//       return next(new ErrorHandler(error.message, 500));
-//     }
-//   }));
-
 
 // delete shipping
 router.delete(
@@ -1024,6 +1015,108 @@ router.put(
       return next(new ErrorHandler(error.message, 500));
     }
   })
+
 );
+router.post(
+  '/reauthenticate',
+  // isAuthenticated,
+  catchAsyncErrors(async (req, res, next) => {
+    let { sellerId, password } = req.body;
+    console.log('reauthenticate', req.body);
+
+    if (!sellerId || !password) {
+      return next(new ErrorHandler('Please provide all fields', 400));
+    }
+
+    const seller = await Shop.findById(sellerId).select("+password");
+
+    if (!seller) {
+      return next(new ErrorHandler('User not found', 404));
+    }
+
+    console.log('reauthenticate2', seller);
+
+    const isPasswordMatched = await seller.comparePassword(password);
+
+    console.log('reauthenticate3', isPasswordMatched);
+
+    if (!isPasswordMatched) {
+      return next(new ErrorHandler('Incorrect password', 401));
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Reauthenticated successfully',
+    });
+  })
+);
+
+
+
+
+// Suspend seller
+router.put(
+  '/suspend',
+  catchAsyncErrors(async (req, res, next) => {
+    const { reason, sellerId } = req.body;
+   
+    
+    if (!reason || !sellerId) {
+      return next(new ErrorHandler('Missing required fields', 400));
+    }
+  
+    const seller = await Shop.findById(sellerId);
+    
+    seller.isSuspended = !seller.isSuspended;
+    await seller.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Shop ${seller.isSuspended ? 'suspended' : 'unsuspended'} successfully`,
+    });
+  })
+);
+
+// Delete seller account
+router.delete(
+  '/delete',
+  catchAsyncErrors(async (req, res, next) => {
+
+    const { reason, sellerId } = req.body;
+   
+    if (!reason || !sellerId) {
+      return next(new ErrorHandler('Missing required fields', 400));
+    }
+
+    const seller = await Shop.findById(sellerId);
+    if (!seller) {
+      return next(new ErrorHandler('User not found', 404));
+    }
+
+
+    if (!seller) {
+      return next(new ErrorHandler('User not found', 404));
+    }
+
+    seller.name = 'Deleted User';
+    seller.email = `deleted_${seller.email}@example.com`;
+    seller._id = `deleted_${seller._id}`;
+    // seller.password = undefined; // or hash some default password
+    // anonymize other sensitive fields as necessary
+    await seller.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Shop removed successfully',
+    });
+
+
+    // Optionally log the reason for deletion
+    //await DeletionLog.create({ userId: user._id, reason });
+
+    //await user.remove();
+
+  }));
+
 
 module.exports = router;
