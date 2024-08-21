@@ -18,7 +18,7 @@ const Shop = require("../model/shop");
 // });
 var transporter = nodemailer.createTransport({
   host: "smtp.zoho.com",
-  port: 587,
+  port: 465,
   auth: {
     user: "adrian@indazetu.com",
     pass: "sidundo@36"
