@@ -51,87 +51,19 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
 
     <style>
     body {
-      font-family: 'Roboto', sans-serif;
+      font-family: 'Arial', sans-serif;
       color: #333;
-      line-height: 1.6;
-      padding: 20px;
       background-color: #f9f9f9;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
+      padding: 20px;
     }
-
     .container {
       max-width: 600px;
-      width: 100%;
+      margin: 0 auto;
       background-color: #fff;
       padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 4px 10px  #FFDBBB;;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
-    .header {
-      display: flex;
-      align-items: center;
-      padding: 10px 20px;
-      background-color: #f7f7f7;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
-    }
-    
-    .header img {
-      width: 40px;
-      height: 40px;
-      margin-right: 15px;
-    }
-    
-    .header h2 {
-      font-size: 26px;
-      color: #333;
-      margin: 0;
-      flex-grow: 1;
-      font-weight: 600;
-    }
-    
-      .message {
-        font-size: 16px;
-        color: #333;
-        background-color: #f4f4f4;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-      }
-      @media (max-width: 600px) {
-        .header {
-          flex-direction: column;
-          align-items: flex-start;
-          padding: 10px 15px;
-        }
-      
-        .header h2 {
-          font-size: 22px;
-          margin-top: 10px;
-        }
-      }
-      
-      @media only screen and (max-width: 800px) {
-        .container {
-          padding: 10px;
-        }
-        .header img {
-          width: 40px;
-          margin-right: 10px;
-        }
-        .header h2 {
-          font-size: 20px;
-        }
-        .message {
-          font-size: 14px;
-        }
-      }
-    </style>
   </head>
   <body>
     <div class="container">
