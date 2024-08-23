@@ -21,36 +21,5 @@
     </div>
   </div>
 </body>
-<script>
-  // Function to handle server response and open a new window if necessary
-  function handleServerResponse(response) {
-    if (response.redirectUrl) {
-      window.open(response.redirectUrl, '_blank'); // Open in a new window
-    } else if (!response.success) {
-      console.error(response.message);
-    }
-  }
-
-  // Example AJAX request to create-shop endpoint
-  fetch('/api/v2/shop/create-shop', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      name: 'ShopName',
-      email: 'shop@example.com',
-      password: 'password',
-      avatar: 'avatar_url',
-      address: 'address',
-      location: 'location',
-      working_hours: '9-5'
-    })
-  })
-    .then(response => response.json())
-    .then(data => handleServerResponse(data))
-    .catch(error => console.error('Error:', error));
-</script>
-
 
 </html>
