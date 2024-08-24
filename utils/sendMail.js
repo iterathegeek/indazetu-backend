@@ -46,9 +46,9 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
   return `
 
     <div class="container">
-      <div class="header">
+      <div style="text-align:center">
         <img src="https://img.icons8.com/ios-filled/50/000000/key.png" alt="Activation Icon">
-        <h2>${subject}</h2>
+        <h2 style="margin-left:20%">${subject}</h2>
       </div>
       
       <div class="message">
