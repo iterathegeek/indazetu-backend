@@ -68,8 +68,8 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
         align-items: center;
         text-align: center;
         padding: 20px 0;
-        background-color: #007bff;
-        color: #fff;
+        background-color: #fff;
+        color: #007bff;
         border-radius: 8px 8px 0 0;
       }
 
