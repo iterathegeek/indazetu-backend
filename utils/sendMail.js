@@ -44,22 +44,23 @@ transporter.use('compile', hbs(handlebarOptions));
 
 const generateMessageEmailTemplate = async ({ subject, message }) => {
   return `
-    <div>
-      <div style="text-align:center; margin-bottom:20px;">
-        <img src="https://img.icons8.com/ios-filled/50/000000/key.png" alt="Activation Icon" style="width:40px; height:auto; margin-bottom:10px;">
-        <h2 style="font-size:22px; margin:0;">${subject}</h2>
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+      <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+        <img src="https://img.icons8.com/ios-filled/50/000000/key.png" alt="Activation Icon" style="width: 40px; height: auto; margin-right: 10px;">
+        <h2 style="font-size: 22px; margin: 0;">${subject}</h2>
       </div>
       
-      <div class="message" style="font-size:16px; line-height:1.5; background-color:#f4f4f4; padding:15px; border-radius:8px;">
+      <div style="font-size: 16px; line-height: 1.5; background-color: #f4f4f4; padding: 15px; border-radius: 8px;">
         ${message}
       </div>
 
-      <div class="footer" style="text-align:center; padding:10px; font-size:14px; color:#555; margin-top:20px;">
+      <div style="text-align: center; padding: 10px; font-size: 14px; color: #555; margin-top: 20px;">
         <p>Thank you for choosing us!</p>
       </div>
     </div>
   `;
 };
+
 
 
 
