@@ -5,17 +5,80 @@
 <head>
   <meta charset="UTF-8">
   <title>{{subject}}</title>
-  
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+
+    .header {
+      text-align: center;
+      padding: 20px 0;
+      background-color: #007bff;
+      color: #fff;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .logo {
+      width: 30px;
+      height: auto;
+      margin-bottom: 10px;
+    }
+
+    .content {
+      padding: 20px;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 10px 0;
+      background-color: #f1f1f1;
+      color: #555;
+      border-radius: 0 0 8px 8px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+
+      .content {
+        padding: 10px;
+      }
+
+      .logo {
+        width: 30px;
+      }
+    }
+  </style>
 </head>
 
 <body>
   <div class="container">
-
+    <header class="header">
+   
+      <h2>Welcome to Indazetu</h2>
     </header>
 
     <div class="content">
-  
+      <p>{{content}}</p>
+      <p>{{{htmlContent}}}</p>
     </div>
+
     <div class="footer">
       <p>Thank you for choosing us!</p>
     </div>

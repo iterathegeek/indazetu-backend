@@ -43,7 +43,23 @@ transporter.use('compile', hbs(handlebarOptions));
 
 const generateMessageEmailTemplate = async ({ subject, message }) => {
   return `
+    <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      color: #333;
+      background-color: #f9f9f9;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
 
+  <body>
     <div class="container">
     <div class="header">
    
@@ -55,7 +71,7 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
         ${message}
       </div>
     </div>
-
+  </body>
   `;
 };
 
