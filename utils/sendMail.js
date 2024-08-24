@@ -54,7 +54,7 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
       }
 
       .container {
-        max-width: 600px;
+        max-width: 1000px;
         margin: 0 auto;
         padding: 20px;
         background-color: #ffffff;
