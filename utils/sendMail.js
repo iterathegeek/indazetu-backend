@@ -1,3 +1,4 @@
+
 const express = require('express');
 const router = express.Router();
 const Notification = require('../model/notification');
@@ -43,6 +44,11 @@ transporter.use('compile', hbs(handlebarOptions));
 
 const generateMessageEmailTemplate = async ({ subject, message }) => {
   return `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
     body {
@@ -127,11 +133,11 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
         }
       }
     </style>
-
-
+  </head>
+  <body>
     <div class="container">
     <div class="header">
-   
+    <img src="https://img.icons8.com/ios-filled/50/000000/key.png" alt="Activation Icon">
     <h2>${subject}</h2>
   </div>
   
@@ -140,8 +146,8 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
         ${message}
       </div>
     </div>
-
-
+  </body>
+  </html>
   `;
 };
 

@@ -1,3 +1,4 @@
+
 <!-- templates/email.hbs -->
 <!DOCTYPE html>
 <html>
@@ -14,54 +15,61 @@
     }
 
     .container {
-      width: 90%;
-      max-width: 600px;
+      width: 80%;
       margin: 0 auto;
       background-color: #fff;
       padding: 20px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
     }
 
     .header {
       text-align: center;
-      padding: 20px 0;
+      padding: 10px 0;
       background-color: #007bff;
       color: #fff;
-      border-radius: 8px 8px 0 0;
+      justify-content: space-between;
     }
 
-    .logo {
-      width: 30px;
-      height: auto;
-      margin-bottom: 10px;
-    }
-
-    .content {
-      padding: 20px;
-      color: #333;
-      line-height: 1.6;
-    }
 
     .footer {
       text-align: center;
       padding: 10px 0;
       background-color: #f1f1f1;
       color: #555;
-      border-radius: 0 0 8px 8px;
+    }
+    .content {
+      padding: 20px;
+      margin-left: 2;
+      justify-content: !space-between;
+    }
+
+
+    .logo {
+      width: 100px;
+      /* Adjust logo width as needed */
+      height: auto;
+    }
+
+    .logo-text {
+      font-weight: bold;
+      color: #428bca;
+      font-size: 1.5rem;
+      /* Adjust font size as needed */
+      margin: 0;
     }
 
     @media (max-width: 768px) {
-      .container {
-        padding: 10px;
+
+      /* Adjust breakpoint as needed for smaller screens */
+      .header {
+        flex-direction: column;
+        /* Stack logo and company name on smaller screens */
+        align-items: center;
       }
 
-      .content {
-        padding: 10px;
-      }
-
-      .logo {
-        width: 30px;
+      .logo-text {
+        margin-top: 1rem;
+        /* Add some spacing after logo on smaller screens */
       }
     }
   </style>
@@ -69,24 +77,21 @@
 
 <body>
   <div class="container">
-    <header class="header">
-   
-      <h2>Welcome to Indazetu</h2>
+    <header class="header" style="background-color: #f2f2f2; display: flex; align-items: center; padding: 1.5rem 2rem;">
+      <img src="https://indazetu.com/static/media/logoo-removebg-preview.041ee5fc1e771ab093a6.png" alt="Logo"
+        class="logo" />
+      {{!-- <small class="logo-text">Karibu !!</small> --}}
     </header>
 
     <div class="content">
       <p>{{content}}</p>
-      <p>{{{htmlContent}}}</p>
+      <p>{{{htmlContent}}}</p> <!-- Triple curly braces to prevent escaping HTML content -->
     </div>
-
     <div class="footer">
       <p>Thank you for choosing us!</p>
     </div>
   </div>
 </body>
-
-</html>
-
 
 
 </html>
