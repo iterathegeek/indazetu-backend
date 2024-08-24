@@ -44,43 +44,8 @@ transporter.use('compile', hbs(handlebarOptions));
 
 const generateMessageEmailTemplate = async ({ subject, message }) => {
   return `
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-    body {
-      font-family: 'Roboto', sans-serif;
-      color: #333;
-      line-height: 1.6;
-      padding: 20px;
-      background-color: #f9f9f9;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-
-    .container {
-      max-width: 600px;
-      width: 100%;
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px  #FFDBBB;;
-    }
-    .header {
-      display: flex;
-      align-items: center;
-      padding: 10px 20px;
-      background-color: #f7f7f7;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
-    }
     
     .header img {
       width: 40px;
@@ -133,8 +98,8 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
         }
       }
     </style>
-  </head>
-  <body>
+ 
+
     <div class="container">
     <div class="header">
     <img src="https://img.icons8.com/ios-filled/50/000000/key.png" alt="Activation Icon">
@@ -146,8 +111,7 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
         ${message}
       </div>
     </div>
-  </body>
-  </html>
+
   `;
 };
 
