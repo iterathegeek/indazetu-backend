@@ -141,6 +141,7 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
 
 
 
+
 const generateOrderEmailTemplate = async (order) => {
   const orderItemsHtml = await Promise.all(order?.cart?.map(async (item) => {
     const seller = await Shop.findById(item.shopId);
