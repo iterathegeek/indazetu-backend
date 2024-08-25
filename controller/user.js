@@ -44,7 +44,9 @@ router.post("/create-user", async (req, res, next) => {
 
 
 
-    const activationUrl = `http://localhost:3000/activation/${activationToken}`;
+    // const activationUrl = `http://localhost:3000/activation/${activationToken}`;
+    const activationUrl = `https://indazetu.com/activation/${activationToken}`;
+    
     console.log('tokenop', activationToken, email, activationUrl)
     console.log('hello', user)
     try {
