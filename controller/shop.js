@@ -58,7 +58,9 @@ router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
     const activationToken = createActivationToken(seller);
     console.log('activationToken', activationToken)
 
-    const activationUrl = `http://localhost:3000/seller/activation/${activationToken}`;
+    //const activationUrl = `http://localhost:3000/seller/activation/${activationToken}`;
+    const activationUrl = `https://indazetu.com/seller/activation/${activationToken}`;
+
 
     try {
       await sendMail({

@@ -49,7 +49,8 @@ router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
 
     const activationToken = createActivationToken(seller);
 
-    const activationUrl = `http://localhost:8000/api/v2/shop/activation/${activationToken}`;
+    //const activationUrl = `http://localhost:8000/api/v2/shop/activation/${activationToken}`;
+    const activationUrl = `https://indazetu-backend.onrender.com/api/v2/shop/activation/${activationToken}`;
 
     try {
       await sendMail({

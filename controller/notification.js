@@ -373,7 +373,7 @@ router.post('/email', async (req, res) => {
     }
     // Email options
     const mailOptions = {
-      from: 'support@indazetu.com',
+      from: 'adrian@indazetu.com',
       to: recipient,
       subject: subject,
       template: 'email', // The name of the template file without extension
@@ -501,7 +501,7 @@ router.post('/send-otp', async (req, res) => {
     const message = `Your OTP code is ${otp}`;
     const htmlContent = await generateMessageEmailTemplate({ subject, message });
     const mailOptions = {
-      from: 'support@indazetu.com',
+      from: 'adrian@indazetu.com',
       to: email,
       subject: subject,
       template: 'email', // The name of the template file without extension
