@@ -48,97 +48,20 @@ transporter.use('compile', hbs(handlebarOptions));
 
 const generateMessageEmailTemplate = async ({ subject, message }) => {
   return `
-  <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-
-    body {
-      font-family: 'Roboto', sans-serif;
-      color: #333;
-      line-height: 1.6;
-      padding: 20px;
-      background-color: #f9f9f9;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-
-    .container {
-      max-width: 600px;
-      width: 100%;
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px  #FFDBBB;;
-    }
-
-    .header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 20px;
-      border-radius: 8px;
-    }
-
-    .header svg {
-      width: 40px;
-      height: 40px;
-      margin-right: 15px;
-    }
-
-    .header h2 {
-      font-size: 24px;
-      color: #333;
-      margin: 0;
-    }
-
-    .message {
-      font-size: 16px;
-      color: #333;
-      background-color: #f4f4f4;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-
-    @media only screen and (max-width: 600px) {
-      .container {
-        padding: 15px;
-      }
-      .header svg {
-        width: 30px;
-        height: 30px;
-        margin-right: 10px;
-        margin-left:6px;
-      }
-      .header h2 {
-        font-size: 20px;
-      }
-      .message {
-        font-size: 14px;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <svg style="margin-left:9px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-key">
-        <path d="M3 11l18-9-9 18-6-6-3 3v-6H3z"></path>
-      </svg>
-      <h2 style="margin-right:9px">${subject}</h2>
-    </div>
-    <div class="message">
-      ${message}
-    </div>
+  <div style="width: 90%; max-width: 1000px; margin: 0 auto; padding: 20px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+  <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+    <img src="https://img.freepik.com/premium-vector/otp-onetime-password-2step-authentication-data-protection-internet-security-concept_100456-10200.jpg" alt="Activation Icon" style="width: 40px; height: auto; margin-right: 10px;">
+    <h2 style="font-size: 24px; margin: 0; font-weight: 600; color: #007bff;">${subject}</h2>
   </div>
-</body>
-</html>
+  
+  <div style="font-size: 16px; line-height: 1.5; background-color: #f4f4f4; padding: 15px; border-radius: 8px;">
+    ${message}
+  </div>
+
+  <div style="text-align: center; padding: 10px; font-size: 14px; color: #555; margin-top: 20px; border-top: 1px solid #ddd;">
+    <p>Thank you for choosing us!</p>
+  </div>
+</div>
   `;
 };
 
@@ -453,71 +376,168 @@ router.post('/sms', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-
 router.post('/verify-otp', async (req, res) => {
-  const { email, otp } = req.body;
+  const { email, otp, type } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    if (type === 'user') {
+      const user = await User.findOne({ email });
 
-    if (!user || user.otp !== otp) {
-      return res.status(400).json({ message: 'Invalid OTP' });
+      if (!user || user.otp !== otp) {
+        return res.status(400).json({ message: 'Invalid OTP' });
+      }
+
+      user.otp = null;  // Clear the OTP after verification
+      await user.save();
+
+      sendToken(user, 200, res);
     }
 
-    // Clear the OTP after successful verification
-    user.otp = null;
-    await user.save();
 
-    // Generate a JWT token or any other logic to complete the login process
-    // const token = user.generateAuthToken();
-    sendToken(user, 200, res);
-    // res.status(200).json({ token });
+    if (type === 'shop') {
+      const { email, otp, password } = req.body;
+
+      const shop = await Shop.findOne({ email });
+
+      if (!shop || shop.otp !== otp) {
+        return next(new ErrorHandler("Invalid OTP", 400));
+      }
+
+      // Clear the OTP after successful verification
+      shop.otp = null;
+      await shop.save();
+      console.log('dad', shop);
+      // Send shop token (JWT) after successful OTP verification
+      return sendShopToken(shop, 200, res);
+    }
+
+    // If no shop matched, send a generic error response
+    return res.status(400).json({ message: 'Invalid OTP or type' });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
+
+
+
+// router.post('/send-otp', async (req, res) => {
+//   const { email, type } = req.body;
+//   const otp = generateOTP();
+//   try {
+//     if (type === 'user') {
+//       const user = await User.findOne({ email });
+
+//       if (!user) {
+//         return res.status(404).json({ message: 'User not found' });
+//       }
+//       console.log('email','type', user);
+
+//       user.otp = otp; // Store the OTP in the user's record (make sure you have an `otp` field in your User model)
+//       // user.phoneNumber=otp;
+//       console.log('email2', otp);
+//       await user.save();
+
+//       console.log('zero', user);
+//     }
+//     else if (type === 'shop') {
+//       const shop = await Shop.findOne({ email });
+//       console.log('shop', shop);
+//       if (!shop) {
+//         return res.status(404).json({ message: 'Shop not found' });
+//       }
+
+//       shop.otp = otp;
+//       await shop.save();
+//     }
+//     const subject = 'Your OTP Code';
+//     const message = `Your OTP code is ${otp}`;
+//     const htmlContent = await generateMessageEmailTemplate({ subject, message });
+//     const mailOptions = {
+//       from: 'adrian@indazetu.com',
+//       to: email,
+//       subject: subject,
+//       template: 'email', // The name of the template file without extension
+//       context: {
+//         subject: subject,
+//         message: message,
+//         htmlContent: htmlContent, // Pass htmlContent to the context
+//       },
+//     }
+
+//     await transporter.sendMail(mailOptions);
+
+//     res.status(200).json({ message: 'OTP sent to your email' });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// });
 
 
 router.post('/send-otp', async (req, res) => {
-  const { email } = req.body;
-  console.log('email', email);
+  const { email, type } = req.body;
+  const otp = generateOTP();
+
   try {
-    const user = await User.findOne({ email });
+    if (type === 'user') {
+      const user = await User.findOne({ email });
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    console.log('email', user);
-    const otp = generateOTP();
-    user.otp = otp; // Store the OTP in the user's record (make sure you have an `otp` field in your User model)
-    // user.phoneNumber=otp;
-    console.log('email2', otp);
-    await user.save();
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
 
-    console.log('zero', user);
-    const subject = 'Your OTP Code';
-    const message = `Your OTP code is ${otp}`;
-    const htmlContent = await generateMessageEmailTemplate({ subject, message });
-    const mailOptions = {
-      from: 'adrian@indazetu.com',
-      to: email,
-      subject: subject,
-      template: 'email', // The name of the template file without extension
-      context: {
+      user.otp = otp;  // Store OTP in the user's record
+      await user.save();
+
+      const subject = 'Your OTP Code';
+      const message = `Your OTP code is ${otp}`;
+      const htmlContent = await generateMessageEmailTemplate({ subject, message });
+
+      const mailOptions = {
+        from: 'adrian@indazetu.com',
+        to: email,
         subject: subject,
-        message: message,
-        htmlContent: htmlContent, // Pass htmlContent to the context
-      },
+        template: 'email',
+        context: { subject, message, htmlContent },
+      };
+
+      await transporter.sendMail(mailOptions);
+
+      res.status(200).json({ message: 'OTP sent to your email' });
     }
+    if (type === 'shop') {
+      const shop = await Shop.findOne({ email });
 
-    await transporter.sendMail(mailOptions);
+      if (!shop) {
+        return res.status(404).json({ message: 'User not found' });
+      }
 
-    res.status(200).json({ message: 'OTP sent to your email' });
+      shop.otp = otp;  // Store OTP in the user's record
+      await shop.save();
+
+      const subject = 'Your OTP Code';
+      const message = `Your OTP code is ${otp}`;
+      const htmlContent = await generateMessageEmailTemplate({ subject, message });
+
+      const mailOptions = {
+        from: 'adrian@indazetu.com',
+        to: email,
+        subject: subject,
+        template: 'email',
+        context: { subject, message, htmlContent },
+      };
+
+      await transporter.sendMail(mailOptions);
+
+      res.status(200).json({ message: 'OTP sent to your email' });
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
+
+
+
 
 module.exports = router;

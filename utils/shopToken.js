@@ -1,6 +1,6 @@
 // create token and saving that in cookies
-const sendShopToken = (user, statusCode, res) => {
-  const token = user.getJwtToken();
+const sendShopToken = (shop, statusCode, res) => {
+  const token = shop.getJwtToken();
   console.log('token',token)
 
   // Options for cookies
@@ -11,9 +11,9 @@ const sendShopToken = (user, statusCode, res) => {
     secure: true,
   };
 
-  res.status(statusCode).cookie("seller_token", token, options).json({
+  res.status(statusCode).cookie("token", token, options).json({
     success: true,
-    user,
+    shop,
     token,
   });
 };

@@ -125,35 +125,66 @@ router.post(
 
 // login user
 router.post(
-  "/login-user",
+  "/complete-login",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { email, password } = req.body;
+      const { userId, password } = req.body;
 
-      if (!email || !password) {
-        return next(new ErrorHandler("Please provide the all fields!", 400));
+      if (!userId || !password) {
+        return next(new ErrorHandler("Please provide all fields!", 400));
       }
 
-      const user = await User.findOne({ email }).select("+password");
+      const user = await User.findById(userId).select("+password");
 
       if (!user) {
-        return next(new ErrorHandler("User doesn't exists!", 400));
+        return next(new ErrorHandler("User doesn't exist!", 400));
       }
 
       const isPasswordValid = await user.comparePassword(password);
 
       if (!isPasswordValid) {
-        return next(
-          new ErrorHandler("Please provide the correct information", 400)
-        );
+        return next(new ErrorHandler("Incorrect credentials", 400));
       }
 
+      // Log the user in by issuing a token or session
       sendToken(user, 201, res);
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
     }
   })
 );
+
+
+router.post(
+  "/check-user",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return next(new ErrorHandler("Please provide all fields!", 400));
+      }
+
+      const user = await User.findOne({ email }).select("+password");
+
+      if (!user) {
+        return next(new ErrorHandler("User doesn't exist!", 400));
+      }
+
+      const isPasswordValid = await user.comparePassword(password);
+
+      if (!isPasswordValid) {
+        return next(new ErrorHandler("Incorrect credentials", 400));
+      }
+
+      // Return the user ID without logging in
+      res.status(200).json({ success: true, userId: user._id });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
 
 // load user
 router.get(

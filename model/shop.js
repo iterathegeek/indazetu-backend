@@ -39,6 +39,10 @@ const shopSchema = new mongoose.Schema({
     type: Number,
     required: [true, "Please enter your shop Phone Number!"],
   },
+  whatsAppNumber: {
+    type: Number,
+    default: '254103787041',
+  },
   supportEmail: {
     type: String,
     required: false,
@@ -110,6 +114,14 @@ const shopSchema = new mongoose.Schema({
       },
     },
   ],
+  otp:{
+    type: String,
+    default: null,
+  },
+  isSuspended: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now(),

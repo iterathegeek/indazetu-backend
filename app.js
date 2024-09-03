@@ -4,6 +4,7 @@ const app = express();
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const session = require('express-session');
 
 app.use(cors({
   origin: ['http://localhost:3000','https://indazetu-client.onrender.com','https://indazetu.com'],
@@ -44,6 +45,7 @@ const businessDocs = require("./controller/businessDocs");
 const pickupStation = require("./controller/pickupStation");
 const shippingCost = require("./controller/shippingCosts");
 const pageTracker = require("./controller/tracker");
+
 
 
 app.use("/api/v2/user", user);

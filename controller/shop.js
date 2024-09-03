@@ -51,6 +51,7 @@ router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
       location: req.body.location,
       workingHours: req.body.working_hours,
       phoneNumber: req.body.phoneNumber,
+      // whatsAppNumber: req.body.whatsAppNumber,
       country:  req.body.country,
       accountType:accountType
     };
@@ -313,37 +314,79 @@ router.post('/shop-info', async (req, res, next) => {
   }
 });
 
-// login shop
+// Check shop credentials and send OTP
 router.post(
-  "/login-shop",
+  "/check-shop",
   catchAsyncErrors(async (req, res, next) => {
     try {
       const { email, password } = req.body;
 
       if (!email || !password) {
-        return next(new ErrorHandler("Please provide the all fields!", 400));
+        return next(new ErrorHandler("Please provide all fields!", 400));
       }
 
-      const user = await Shop.findOne({ email }).select("+password");
+      const shop = await Shop.findOne({ email }).select("+password");
 
-      if (!user) {
-        return next(new ErrorHandler("User doesn't exists!", 400));
+      if (!shop) {
+        return next(new ErrorHandler("Shop doesn't exist!", 400));
       }
 
-      const isPasswordValid = await user.comparePassword(password);
+      const isPasswordValid = await shop.comparePassword(password);
 
       if (!isPasswordValid) {
-        return next(
-          new ErrorHandler("Please provide the correct information", 400)
-        );
+        return next(new ErrorHandler("Incorrect credentials", 400));
       }
 
-      sendShopToken(user, 201, res);
+
+      // Return the shop ID without logging in
+      res.status(200).json({ success: true, shopId: shop._id });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
     }
   })
 );
+
+
+
+// Complete shop login after OTP verification
+router.post(
+  "/complete-shop-login",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { shopId, password, otp } = req.body;
+
+      if (!shopId || !password || !otp) {
+        return next(new ErrorHandler("Please provide all fields!", 400));
+      }
+
+      const shop = await Shop.findById(shopId).select("+password");
+
+      if (!shop) {
+        return next(new ErrorHandler("Shop doesn't exist!", 400));
+      }
+
+      const isPasswordValid = await shop.comparePassword(password);
+
+      if (!isPasswordValid) {
+        return next(new ErrorHandler("Incorrect credentials", 400));
+      }
+
+      if (shop.otp !== otp) {
+        return next(new ErrorHandler("Invalid OTP", 400));
+      }
+
+      // Clear the OTP after successful verification
+      shop.otp = null;
+      await shop.save();
+
+      // Log the shop in by issuing a token or session
+      sendShopToken(shop, 201, res);
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
 
 // load shop
 router.get(
@@ -502,7 +545,7 @@ router.put(
   isSeller,
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { name, description, address, phoneNumber, country, location, workingHours, currency,accountType,supportEmail ,website,zipCode} = req.body;
+      const { name, description, address, phoneNumber, whatsAppNumber,country, location, workingHours, currency,accountType,supportEmail ,website,zipCode} = req.body;
 
       const shop = await Shop.findOne(req.seller._id);
 
@@ -514,6 +557,7 @@ router.put(
       shop.description = description;
       shop.address = address;
       shop.phoneNumber = phoneNumber;
+      shop.whatsAppNumber = whatsAppNumber;
       shop.country = country;
       shop.location = location;
       shop.workingHours = workingHours;
@@ -521,7 +565,7 @@ router.put(
       shop.accountType = accountType;
       shop.supportEmail=supportEmail;
       shop.website=website; 
-      shop.zipCode=zipCodeange;
+      shop.zipCode=zipCode;
 
       await shop.save();
 
