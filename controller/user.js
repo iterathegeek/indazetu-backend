@@ -155,36 +155,6 @@ router.post(
 );
 
 
-router.post(
-  "/check-user",
-  catchAsyncErrors(async (req, res, next) => {
-    try {
-      const { email, password } = req.body;
-
-      if (!email || !password) {
-        return next(new ErrorHandler("Please provide all fields!", 400));
-      }
-
-      const user = await User.findOne({ email }).select("+password");
-
-      if (!user) {
-        return next(new ErrorHandler("User doesn't exist!", 400));
-      }
-
-      const isPasswordValid = await user.comparePassword(password);
-
-      if (!isPasswordValid) {
-        return next(new ErrorHandler("Incorrect credentials", 400));
-      }
-
-      // Return the user ID without logging in
-      res.status(200).json({ success: true, userId: user._id });
-    } catch (error) {
-      return next(new ErrorHandler(error.message, 500));
-    }
-  })
-);
-
 
 // load user
 router.get(
@@ -597,5 +567,99 @@ router.delete(
     });
   })
 );
+
+// Forgot Password
+router.post(
+  '/forgot-password',
+  catchAsyncErrors(async (req, res, next) => {
+    const { email } = req.body;
+
+    if (!email) {
+      return next(new ErrorHandler('Please provide an email address', 400));
+    }
+
+    // Check if the user exists
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return next(new ErrorHandler('User not found with this email', 404));
+    }
+
+    // Generate a password reset token
+    const resetToken = user.getResetPasswordToken();
+
+    await user.save({ validateBeforeSave: false });
+
+    // Create reset URL
+    const resetUrl = `${req.protocol}://${req.get(
+      'host'
+    )}/password/reset/${resetToken}`;
+
+    const message = `You are receiving this email because you (or someone else) has requested a password reset for your account. Please click on the following link, or paste it into your browser to complete the process:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email and your password will remain unchanged.`;
+
+    try {
+      // Send email
+      await sendMail({
+        email: user.email,
+        subject: 'Password Reset Request',
+        message,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: `Email sent to ${user.email}`,
+      });
+    } catch (error) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+
+      await user.save({ validateBeforeSave: false });
+
+      return next(new ErrorHandler('Email could not be sent', 500));
+    }
+  })
+);
+
+// Password reset route
+router.put(
+  '/password/reset/:token',
+  catchAsyncErrors(async (req, res, next) => {
+    const resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(req.params.token)
+      .digest('hex');
+
+    // Find user by token and ensure token hasn't expired
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return next(
+        new ErrorHandler('Password reset token is invalid or has expired', 400)
+      );
+    }
+
+    if (req.body.password !== req.body.confirmPassword) {
+      return next(new ErrorHandler('Passwords do not match', 400));
+    }
+
+    // Set new password
+    user.password = req.body.password;
+
+    // Clear reset token fields
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful',
+    });
+  })
+);
+
 
 module.exports = router;
