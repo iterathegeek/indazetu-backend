@@ -9,6 +9,7 @@ const sendMail = require("../utils/sendMail");
 const sendToken = require("../utils/jwtToken");
 const { isAuthenticated, isAdmin } = require("../middleware/auth");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
 // create user
 router.post("/create-user", async (req, res, next) => {
@@ -591,9 +592,7 @@ router.post(
     await user.save({ validateBeforeSave: false });
 
     // Create reset URL
-    const resetUrl = `${req.protocol}://${req.get(
-      'host'
-    )}/password/reset/${resetToken}`;
+    const resetUrl = `https://indazetu.com/password/reset/${resetToken}`;
 
     const message = `You are receiving this email because you (or someone else) has requested a password reset for your account. Please click on the following link, or paste it into your browser to complete the process:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email and your password will remain unchanged.`;
 
