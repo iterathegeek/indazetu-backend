@@ -660,42 +660,57 @@ router.post(
 router.put(
   '/password/reset/:token',
   catchAsyncErrors(async (req, res, next) => {
+    // Hash the token from the URL
     const resetPasswordToken = crypto
       .createHash('sha256')
       .update(req.params.token)
       .digest('hex');
 
-    // Find user by token and ensure token hasn't expired
+    // Log the hashed token to verify it's correct
+    console.log('Hashed Token:', resetPasswordToken);
+
+    // Find user by resetPasswordToken and ensure token has not expired
     const user = await User.findOne({
       resetPasswordToken,
-      resetPasswordExpire: { $gt: Date.now() },
+      resetPasswordExpire: { $gt: Date.now() }, // Token expiration check
     });
 
+    // If no user is found, return an error
     if (!user) {
       return next(
         new ErrorHandler('Password reset token is invalid or has expired', 400)
       );
     }
 
+    // Check if the passwords match
     if (req.body.password !== req.body.confirmPassword) {
       return next(new ErrorHandler('Passwords do not match', 400));
     }
 
-    // Set new password
+    // Set the new password
     user.password = req.body.password;
 
-    // Clear reset token fields
+    // Clear the reset token fields after successful reset
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
 
-    await user.save();
+    try {
+      // Save the updated user
+      await user.save();
+    } catch (error) {
+      // Log error if save fails
+      console.error('Error saving user:', error);
+      return next(new ErrorHandler('Error saving new password', 500));
+    }
 
+    // Send success response
     res.status(200).json({
       success: true,
       message: 'Password reset successful',
     });
   })
 );
+
 
 
 module.exports = router;
