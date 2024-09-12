@@ -15,6 +15,8 @@ const ShopVideos = require("../model/shopVideos");
 const ShopPosts = require("../model/shopPosts");
 const ShippingCost = require("../model/shippingCosts");
 const shippingCosts = require("../model/shippingCosts");
+
+
 // create shop
 
 router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
@@ -1165,6 +1167,60 @@ router.delete(
   }));
 
 
+// Forgot Password
+router.post(
+  '/forgot-password',
+  catchAsyncErrors(async (req, res, next) => {
+    const { email } = req.body;
+
+    if (!email) {
+      return next(new ErrorHandler('Please provide an email address', 400));
+    }
+
+    // Check if the shop exists
+    const shop = await Shop.findOne({ email });
+
+    if (!shop) {
+      return next(new ErrorHandler('shop not found with this email', 404));
+    }
+
+    // Generate a password reset token
+    const resetToken = shop.getResetPasswordToken();
+    shop.resetPasswordToken = resetToken;
+    
+    // Set expiration time to 15 minutes from now
+    shop.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes in milliseconds
+    
+
+    await shop.save({ validateBeforeSave: false });
+
+    // Create reset URL
+    const resetUrl = `https://indazetu.com/password/reset/${resetToken}`;
+
+    const message = `You are receiving this email because you (or someone else) has requested a password reset for your account. Please click on the following link, or paste it into your browser to complete the process:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email and your password will remain unchanged.`;
+
+    try {
+      // Send email
+      await sendMail({
+        email: shop.email,
+        subject: 'Password Reset Request',
+        message,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: `Email sent to ${shop.email}`,
+      });
+    } catch (error) {
+      shop.resetPasswordToken = undefined;
+      shop.resetPasswordExpire = undefined;
+
+      await shop.save({ validateBeforeSave: false });
+
+      return next(new ErrorHandler('Email could not be sent', 500));
+    }
+  })
+);
 // Password reset route
 router.put(
   '/password/reset/:token',
@@ -1177,7 +1233,7 @@ router.put(
     console.log('Hashed Token from URL:', resetPasswordToken);
 
     // Find shop by token and check expiration
-    const shop = await shop.findOne({
+    const shop = await Shop.findOne({
       resetPasswordToken,
      resetPasswordExpire: { $gt: Date.now() }, // Ensure token is still valid
     });
