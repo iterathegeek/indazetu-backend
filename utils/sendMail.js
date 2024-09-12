@@ -21,8 +21,8 @@ var transporter = nodemailer.createTransport({
   host: "smtp.zoho.com",
   port: 587,
   auth: {
-    user: "adrian@indazetu.com",
-    pass: "sidundo@36"
+    user: "support@indazetu.com",
+    pass: "v7'}Zrbj]PrN!Fh"
   }
 });
 
@@ -290,7 +290,7 @@ const sendMail = async (options) => {
 
     // Email options
     const mailOptions = {
-      from: 'adrian@indazetu.com',
+      from: 'support@indazetu.com',
       to: email,
       subject: subject,
       template: 'email', // The name of the template file without extension

@@ -124,6 +124,38 @@ router.post(
   })
 );
 
+
+// Check shop credentials and send OTP
+router.post(
+  "/check-user",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return next(new ErrorHandler("Please provide all fields!", 400));
+      }
+
+      const user = await User.findOne({ email }).select("+password");
+
+      if (!user) {
+        return next(new ErrorHandler("User doesn't exist!", 400));
+      }
+
+      const isPasswordValid = await user.comparePassword(password);
+
+      if (!isPasswordValid) {
+        return next(new ErrorHandler("Incorrect credentials", 400));
+      }
+
+
+      // Return the shop ID without logging in
+      res.status(200).json({ success: true, userId: user._id });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
 // login user
 router.post(
   "/complete-login",
@@ -588,6 +620,11 @@ router.post(
 
     // Generate a password reset token
     const resetToken = user.getResetPasswordToken();
+    user.resetPasswordToken = resetToken;
+    
+    // Set expiration time to 15 minutes from now
+    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes in milliseconds
+    
 
     await user.save({ validateBeforeSave: false });
 

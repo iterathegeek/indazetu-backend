@@ -77,7 +77,7 @@ isSuspended: {
   default: Date.now(),
  },
  resetPasswordToken: String,
- resetPasswordTime: Date,
+ resetPasswordExpire: Date,
 });
 
 

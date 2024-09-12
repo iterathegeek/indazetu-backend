@@ -22,10 +22,10 @@ const sendToken = require("../utils/jwtToken");
 // });
 var transporter = nodemailer.createTransport({
   host: "smtp.zoho.com",
-  port: 465,
+  port: 587,
   auth: {
-    user: "adrian@indazetu.com",
-    pass: "sidundo@36"
+    user: "support@indazetu.com",
+    pass: "v7'}Zrbj]PrN!Fh"
   }
 });
 // Configure Handlebars
@@ -296,7 +296,7 @@ router.post('/email', async (req, res) => {
     }
     // Email options
     const mailOptions = {
-      from: 'adrian@indazetu.com',
+      from: 'support@indazetu.com',
       to: recipient,
       subject: subject,
       template: 'email', // The name of the template file without extension
@@ -390,7 +390,7 @@ router.post('/verify-otp', async (req, res) => {
       user.otp = null;  // Clear the OTP after verification
       await user.save();
 
-      sendToken(user, 200, res);
+     return sendToken(user, 200, res);
     }
 
 
@@ -495,7 +495,7 @@ router.post('/send-otp', async (req, res) => {
       const htmlContent = await generateMessageEmailTemplate({ subject, message });
 
       const mailOptions = {
-        from: 'adrian@indazetu.com',
+        from: 'support@indazetu.com',
         to: email,
         subject: subject,
         template: 'email',
@@ -521,7 +521,7 @@ router.post('/send-otp', async (req, res) => {
       const htmlContent = await generateMessageEmailTemplate({ subject, message });
 
       const mailOptions = {
-        from: 'adrian@indazetu.com',
+        from: 'support@indazetu.com',
         to: email,
         subject: subject,
         template: 'email',
