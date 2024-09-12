@@ -666,23 +666,26 @@ router.put(
       .update(req.params.token)
       .digest('hex');
 
-    // Log the hashed token to verify it's correct
-    console.log('Hashed Token:', resetPasswordToken);
+    // Log the hashed token and current time for debugging
+    console.log('Hashed Token from URL:', resetPasswordToken);
 
-    // Find user by resetPasswordToken and ensure token has not expired
+    // Find user by token and check expiration
     const user = await User.findOne({
       resetPasswordToken,
-      resetPasswordExpire: { $gt: Date.now() }, // Token expiration check
+      resetPasswordExpire: { $gt: Date.now() }, // Ensure token is still valid
     });
 
-    // If no user is found, return an error
     if (!user) {
-      return next(
-        new ErrorHandler('Password reset token is invalid or has expired', 400)
-      );
+      console.log('User not found or token has expired.');
+      return next(new ErrorHandler('Password reset token is invalid or has expired', 400));
     }
 
-    // Check if the passwords match
+    // Log token details for debugging
+    console.log('Stored Token in DB:', user.resetPasswordToken);
+    console.log('Token Expiry Time:', user.resetPasswordExpire);
+    console.log('Current Time:', Date.now());
+
+    // Check if passwords match
     if (req.body.password !== req.body.confirmPassword) {
       return next(new ErrorHandler('Passwords do not match', 400));
     }
@@ -690,26 +693,20 @@ router.put(
     // Set the new password
     user.password = req.body.password;
 
-    // Clear the reset token fields after successful reset
+    // Clear reset token fields
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
 
-    try {
-      // Save the updated user
-      await user.save();
-    } catch (error) {
-      // Log error if save fails
-      console.error('Error saving user:', error);
-      return next(new ErrorHandler('Error saving new password', 500));
-    }
+    // Save updated user
+    await user.save();
 
-    // Send success response
     res.status(200).json({
       success: true,
       message: 'Password reset successful',
     });
   })
 );
+
 
 
 
