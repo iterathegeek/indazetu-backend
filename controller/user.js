@@ -672,7 +672,7 @@ router.put(
     // Find user by token and check expiration
     const user = await User.findOne({
       resetPasswordToken,
-      resetPasswordExpire: { $gt: Date.now() }, // Ensure token is still valid
+     // resetPasswordExpire: { $gt: Date.now() }, // Ensure token is still valid
     });
 
     if (!user) {
