@@ -1165,4 +1165,53 @@ router.delete(
   }));
 
 
+// Password reset route
+router.put(
+  '/password/reset/:token',
+  catchAsyncErrors(async (req, res, next) => {
+    // Hash the token from the URL
+    
+    const resetPasswordToken =req.params.token;
+
+    // Log the hashed token and current time for debugging
+    console.log('Hashed Token from URL:', resetPasswordToken);
+
+    // Find shop by token and check expiration
+    const shop = await shop.findOne({
+      resetPasswordToken,
+     resetPasswordExpire: { $gt: Date.now() }, // Ensure token is still valid
+    });
+
+    if (!shop) {
+      console.log('shop not found or token has expired.');
+      return next(new ErrorHandler('Password reset token is invalid or has expired', 400));
+    }
+
+    // Log token details for debugging
+    console.log('Stored Token in DB:', shop.resetPasswordToken);
+    console.log('Token Expiry Time:', shop.resetPasswordExpire);
+    console.log('Current Time:', Date.now());
+
+    // Check if passwords match
+    if (req.body.password !== req.body.confirmPassword) {
+      return next(new ErrorHandler('Passwords do not match', 400));
+    }
+
+    // Set the new password
+    shop.password = req.body.password;
+
+    // Clear reset token fields
+    shop.resetPasswordToken = undefined;
+    shop.resetPasswordExpire = undefined;
+
+    // Save updated shop
+    await shop.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful',
+    });
+  }));
+
+
 module.exports = router;

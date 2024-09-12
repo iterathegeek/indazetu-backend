@@ -332,4 +332,52 @@ const sendMail = async (options) => {
 };
 
 
+// Password reset route
+router.put(
+  '/password/reset/:token',
+  catchAsyncErrors(async (req, res, next) => {
+    // Hash the token from the URL
+    
+    const resetPasswordToken =req.params.token;
+
+    // Log the hashed token and current time for debugging
+    console.log('Hashed Token from URL:', resetPasswordToken);
+
+    // Find user by token and check expiration
+    const user = await User.findOne({
+      resetPasswordToken,
+     resetPasswordExpire: { $gt: Date.now() }, // Ensure token is still valid
+    });
+
+    if (!user) {
+      console.log('User not found or token has expired.');
+      return next(new ErrorHandler('Password reset token is invalid or has expired', 400));
+    }
+
+    // Log token details for debugging
+    console.log('Stored Token in DB:', user.resetPasswordToken);
+    console.log('Token Expiry Time:', user.resetPasswordExpire);
+    console.log('Current Time:', Date.now());
+
+    // Check if passwords match
+    if (req.body.password !== req.body.confirmPassword) {
+      return next(new ErrorHandler('Passwords do not match', 400));
+    }
+
+    // Set the new password
+    user.password = req.body.password;
+
+    // Clear reset token fields
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    // Save updated user
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful',
+    });
+  }));
+
 module.exports = sendMail;
