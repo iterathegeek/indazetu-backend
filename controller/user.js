@@ -661,10 +661,8 @@ router.put(
   '/password/reset/:token',
   catchAsyncErrors(async (req, res, next) => {
     // Hash the token from the URL
-    const resetPasswordToken = crypto
-      .createHash('sha256')
-      .update(req.params.token)
-      .digest('hex');
+    
+    const resetPasswordToken =req.params.token;
 
     // Log the hashed token and current time for debugging
     console.log('Hashed Token from URL:', resetPasswordToken);
@@ -672,7 +670,7 @@ router.put(
     // Find user by token and check expiration
     const user = await User.findOne({
       resetPasswordToken,
-     // resetPasswordExpire: { $gt: Date.now() }, // Ensure token is still valid
+     resetPasswordExpire: { $gt: Date.now() }, // Ensure token is still valid
     });
 
     if (!user) {
