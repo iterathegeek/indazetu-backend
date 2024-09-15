@@ -355,9 +355,9 @@ router.post(
   "/complete-shop-login",
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { shopId, password, otp } = req.body;
+      const { shopId, password } = req.body;
 
-      if (!shopId || !password || !otp) {
+      if (!shopId || !password) {
         return next(new ErrorHandler("Please provide all fields!", 400));
       }
 
@@ -373,13 +373,13 @@ router.post(
         return next(new ErrorHandler("Incorrect credentials", 400));
       }
 
-      if (shop.otp !== otp) {
-        return next(new ErrorHandler("Invalid OTP", 400));
-      }
+      // if (shop.otp !== otp) {
+      //   return next(new ErrorHandler("Invalid OTP", 400));
+      // }
 
-      // Clear the OTP after successful verification
-      shop.otp = null;
-      await shop.save();
+      // //Clear the OTP after successful verification
+      // shop.otp = null;
+      // await shop.save();
 
       // Log the shop in by issuing a token or session
       sendShopToken(shop, 201, res);

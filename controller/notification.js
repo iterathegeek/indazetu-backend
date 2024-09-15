@@ -11,6 +11,8 @@ const Shop = require("../model/shop");
 const generateOTP = require("../utils/otp")
 const User = require("../model/user");
 const sendToken = require("../utils/jwtToken");
+const sendShopToken = require('../utils/shopToken');
+
 
 // var transporter = nodemailer.createTransport({
 //   host: "sandbox.smtp.mailtrap.io",
@@ -395,12 +397,12 @@ router.post('/verify-otp', async (req, res) => {
 
 
     if (type === 'shop') {
-      const { email, otp, password } = req.body;
+     // const { email, otp, password } = req.body;
 
       const shop = await Shop.findOne({ email });
 
       if (!shop || shop.otp !== otp) {
-        return next(new ErrorHandler("Invalid OTP", 400));
+        return res.status(400).json({ message: 'Invalid OTP' });
       }
 
       // Clear the OTP after successful verification
@@ -510,7 +512,7 @@ router.post('/send-otp', async (req, res) => {
       const shop = await Shop.findOne({ email });
 
       if (!shop) {
-        return res.status(404).json({ message: 'User not found' });
+        return res.status(404).json({ message: 'Shop not found' });
       }
 
       shop.otp = otp;  // Store OTP in the user's record

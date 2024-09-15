@@ -11,7 +11,7 @@ const sendShopToken = (shop, statusCode, res) => {
     secure: true,
   };
 
-  res.status(statusCode).cookie("token", token, options).json({
+  res.status(statusCode).cookie("seller_token", token, options).json({
     success: true,
     shop,
     token,
