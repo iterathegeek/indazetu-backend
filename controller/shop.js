@@ -21,15 +21,16 @@ const shippingCosts = require("../model/shippingCosts");
 // create shop
 
 router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
+
   try {
     const { email,avatar, accountType } = req.body;
-    console.log('avatar',req.body.accountType)
+
     const sellerEmail = await Shop.findOne({ email });
     if (sellerEmail) {
       return next(new ErrorHandler("User already exists", 400));
     }
 
- 
+    console.log('shop',sellerEmail);
     const myCloud = avatar ? await cloudinary.v2.uploader.upload(avatar, {
       folder: 'avatars',
     }) : {
@@ -60,7 +61,6 @@ router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
     };
 
     const activationToken = createActivationToken(seller);
-    console.log('activationToken', activationToken)
 
     //const activationUrl = `http://localhost:3000/seller/activation/${activationToken}`;
     const activationUrl = `https://indazetu.com/seller/activation/${activationToken}`;
@@ -102,39 +102,49 @@ const createActivationToken = (seller) => {
 
 
 // activate user
-router.get("/activation/:activation_token",catchAsyncErrors(async (req, res, next) => {
+router.post(
+  "/activation",
+  catchAsyncErrors(async (req, res, next) => {
+    console.log('we here', req)
     try {
       console.log('welcome home')
-      const { activation_token } = req.params;
-      // console.log('token',token);
-      // console.log('token2',process.env.JWT_SECRET_KEY);
-      // const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-
-      // console.log('Decoded Token:', decoded);
-      // console.log('activation_token',token);
-
+      const { activation_token } = req.body;
+      
+      console.log('welcome home22S',activation_token)
       const newSeller = jwt.verify(
         activation_token,
         process.env.ACTIVATION_SECRET
       );
       console.log('activation_token2', newSeller);
 
-      
-
       if (!newSeller) {
         return next(new ErrorHandler("Invalid token", 400));
       }
-
-      const { name, email, password, avatar, country, banner, address, phoneNumber, location, workingHours } =
+      console.log('ndeee', newSeller);
+      const { name, email, password, avatar, country, banner, address,location, phoneNumber,accountType} =
         newSeller;
 
       let seller = await Shop.findOne({ email });
-
+      console.log('activaten2', seller);
       if (seller) {
         return next(new ErrorHandler("Seller already exists", 400));
       }
      
+      shop.name = name;
+      shop.description = description;
+      shop.address = address;
+      shop.phoneNumber = phoneNumber;
+      shop.whatsAppNumber = whatsAppNumber;
+      shop.country = country;
+      shop.location = location;
+      shop.workingHours = workingHours;
+      shop.currency = currency;
+      shop.accountType = accountType;
+      shop.supportEmail=supportEmail;
+      shop.website=website; 
+      shop.zipCode=zipCode;
 
+      await shop.save();
       seller = await Shop.create({
         name,
         email,
@@ -145,27 +155,17 @@ router.get("/activation/:activation_token",catchAsyncErrors(async (req, res, nex
         address,
         phoneNumber,
         location,
-        workingHours,
         accountType
       });
-      res.status(201).json({
-        success: true,
-        message: 'success...',
-       // redirectUrl: 'http://localhost:3000'
-      });
+      console.log('aion_token2', seller);
      sendShopToken(seller, 201, res);
 
 
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
-      // res.status(500).json({ 
-      //   success: false, 
-      //   message: 'An error occurred, redirecting...', 
-      //   redirectUrl: 'http://localhost:3000' 
-      // });
-    //  res.redirectUrl('http://localhost:3000');
+      
     };
-  // res.redirectUrl('http://localhost:3000');
+
   })
 );
 // GET endpoint to fetch follow status

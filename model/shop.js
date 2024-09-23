@@ -20,16 +20,19 @@ const shopSchema = new mongoose.Schema({
   },
   description: {
     type: String,
+    required: false,
   },
   currency: {
     type: String,
     default: "KES",
+    required: false,
   },
   location: {
     type: Object,
   },
   workingHours: {
-    type: Object
+    type: Object,
+    required: false,
   },
 
   address: {
@@ -87,10 +90,11 @@ const shopSchema = new mongoose.Schema({
   },
   zipCode: {
     type: Number,
-    required: true,
+    required: false,
   },
   withdrawMethod: {
     type: Object,
+    required: false,
   },
   availableBalance: {
     type: Number,
@@ -145,6 +149,8 @@ shopSchema.methods.getJwtToken = function () {
     expiresIn: process.env.JWT_EXPIRES,
   });
 };
+
+
 
 // comapre password
 shopSchema.methods.comparePassword = async function (enteredPassword) {
