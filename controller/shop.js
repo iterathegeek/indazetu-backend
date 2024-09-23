@@ -17,6 +17,7 @@ const ShippingCost = require("../model/shippingCosts");
 const shippingCosts = require("../model/shippingCosts");
 
 
+
 // create shop
 
 router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
@@ -118,6 +119,8 @@ router.get("/activation/:activation_token",catchAsyncErrors(async (req, res, nex
       );
       console.log('activation_token2', newSeller);
 
+      
+
       if (!newSeller) {
         return next(new ErrorHandler("Invalid token", 400));
       }
@@ -150,7 +153,7 @@ router.get("/activation/:activation_token",catchAsyncErrors(async (req, res, nex
         message: 'success...',
        // redirectUrl: 'http://localhost:3000'
       });
-    //  sendShopToken(seller, 201, res);
+     sendShopToken(seller, 201, res);
 
 
     } catch (error) {
