@@ -59,10 +59,6 @@ const generateMessageEmailTemplate = async ({ subject, message }) => {
   <div style="font-size: 16px; line-height: 1.5; background-color: #f4f4f4; padding: 15px; border-radius: 8px;">
     ${message}
   </div>
-
-  <div style="text-align: center; padding: 10px; font-size: 14px; color: #555; margin-top: 20px; border-top: 1px solid #ddd;">
-    <p>Thank you for choosing us!</p>
-  </div>
 </div>
   `;
 };
