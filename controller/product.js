@@ -70,7 +70,7 @@ router.post(
                 .composite([{
                   input: Buffer.from(`
                   <svg width="500" height="150" xmlns="http://www.w3.org/2000/svg">
-                  <text x="50%" y="50%" font-size="90" fill="white" font-family="Arial" stroke="black" stroke-width="1"
+                  <text x="50%" y="50%" font-size="40" fill="white" font-family="Arial" stroke="black" stroke-width="1"
                         text-anchor="middle" dominant-baseline="middle">
                     ${shop.name}
                   </text>

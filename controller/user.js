@@ -56,7 +56,7 @@ router.post("/create-user", async (req, res, next) => {
         email: user.email,
         subject: "Activate your Account",
         message: `
-          <p>Hello ${user.name},</p>
+          <p>Hello ${user.name},</p>seller/activation
           <p>Please click on the button below to activate your Account:</p>
           <a href="${activationUrl}" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: #fff; background-color: #007BFF; border-radius: 5px; text-decoration: none;">
           Activate Account
