@@ -62,13 +62,13 @@ router.post(
         const imageBuffer = Buffer.from(base64Image.replace(/^data:image\/\w+;base64,/, ""), 'base64');
         const watermarkedImagePath = `${tempDir}watermarked_${i}.png`;
 
-       
+
         try {
           // Resize the image to a maximum width and height if it's too large
           const resizedImageBuffer = await sharp(imageBuffer)
             .resize({
-              width: 2000,   // Set max width
-              height: 2000,  // Set max height
+              width: 200,   // Set max width
+              height: 200,  // Set max height
               fit: 'inside', // Ensure the image fits within these dimensions while maintaining the aspect ratio
             })
             .toBuffer();
@@ -370,7 +370,7 @@ router.put('/update-product/:id', async (req, res) => {
       return res.status(404).json({ message: "Product not found!" });
     }
 
-    console.log('existing',existingProduct);
+    console.log('existing', existingProduct);
 
     // Delete old images from Cloudinary
     if (existingProduct.images && existingProduct.images.length > 0) {
@@ -390,7 +390,7 @@ router.put('/update-product/:id', async (req, res) => {
     }
 
 
-    console.log('existing images',images);
+    console.log('existing images', images);
     const imagesLinks = [];
 
     // Ensure temp directory exists
@@ -407,44 +407,46 @@ router.put('/update-product/:id', async (req, res) => {
     const watermarkBuffer = Buffer.from(watermarkResponse.data, 'binary');
 
     for (let i = 0; i < images.length; i++) {
-      if (images[i].startsWith('data:image/')) {
-        const imageBuffer = Buffer.from(images[i].replace(/^data:image\/\w+;base64,/, ""), 'base64');
-        const watermarkedImagePath = `${tempDir}watermarked_${i}.png`;
-        console.log('imageBuffer',imageBuffer)
+  if (images[i].startsWith('data:image/')) {
+      const imageBuffer = Buffer.from(images[i].replace(/^data:image\/\w+;base64,/, ""), 'base64');
+      const watermarkedImagePath = `${tempDir}watermarked_${i}.png`;
 
-        await sharp(imageBuffer)
-          .composite([{ input: watermarkBuffer, gravity: 'southeast' }])
-          .png()
+      // Create the base image and resize the watermark
+      await sharp(imageBuffer)
+          .resize({ width: 800, height: 800, fit: 'inside' }) // Resize main image
           .toBuffer()
           .then(async (bufferedImage) => {
-            await sharp(bufferedImage)
-              .composite([{
-                input: Buffer.from(`
-                  <svg width="500" height="150" xmlns="http://www.w3.org/2000/svg">
-                  <text x="50%" y="50%" font-size="40" fill="white" font-family="Arial" stroke="black" stroke-width="1"
-                        text-anchor="middle" dominant-baseline="middle">
-                    ${shop?.name }
-                  </text>
-                </svg>
-                  `),
-                gravity: 'center'
-              }])
-              .png()
-              .toFile(watermarkedImagePath);
+              // Get the dimensions of the main image
+              const { width, height } = await sharp(bufferedImage).metadata();
+
+              // Resize watermark to fit the main image (optional: you can keep the aspect ratio)
+              const resizedWatermarkBuffer = await sharp(watermarkBuffer)
+                  .resize({
+                      width: Math.floor(width * 0.5), // Resize to 50% of the main image width
+                      height: Math.floor(height * 0.5), // Resize to 50% of the main image height
+                      fit: 'inside'
+                  })
+                  .toBuffer();
+
+              // Composite the watermark on top of the main image
+              await sharp(bufferedImage)
+                  .composite([{ input: resizedWatermarkBuffer, gravity: 'southeast' }])
+                  .png()
+                  .toFile(watermarkedImagePath);
           });
 
-        const result = await cloudinary.v2.uploader.upload(watermarkedImagePath, {
+      // Upload to Cloudinary
+      const result = await cloudinary.v2.uploader.upload(watermarkedImagePath, {
           folder: "products",
-        });
+      });
 
-        console.log('result',result);
-
-        imagesLinks.push({
+      imagesLinks.push({
           public_id: result.public_id,
           url: result.secure_url,
-        });
+      });
 
-        fs.unlinkSync(watermarkedImagePath);
+      fs.unlinkSync(watermarkedImagePath);
+
       } else if (images[i].startsWith('https://res.cloudinary.com')) {
         const public_id = images[i].split('/').pop().split('.')[0];
         imagesLinks.push({
@@ -465,9 +467,9 @@ router.put('/update-product/:id', async (req, res) => {
       { ...productData, images: imagesLinks },
       { new: true }
     );
-    
+
     console.log('Updated Product:', updatedProduct);
-    
+
 
     res.status(200).json({
       success: true,
