@@ -19,12 +19,12 @@ const downloadImage = async (url) => {
   return Buffer.from(response.data, 'binary');
 };
 
+
 router.post(
   "/create-product",
   catchAsyncErrors(async (req, res, next) => {
-    try {
-      console.log('Received product data:', req.body);
 
+    try {
       const shopId = req.body.shopId;
       const shop = await Shop.findById(shopId);
 
@@ -55,6 +55,7 @@ router.post(
         responseType: 'arraybuffer', // Get the image as a buffer
       });
       const watermarkBuffer = Buffer.from(watermarkResponse.data, 'binary');
+
       for (let i = 0; i < images.length; i++) {
         const base64Image = images[i];
 
@@ -62,42 +63,23 @@ router.post(
         const imageBuffer = Buffer.from(base64Image.replace(/^data:image\/\w+;base64,/, ""), 'base64');
         const watermarkedImagePath = `${tempDir}watermarked_${i}.png`;
 
-
         try {
-          // Resize the image to a maximum width and height if it's too large
-          const resizedImageBuffer = await sharp(imageBuffer)
-            .resize({
-              width: 200,   // Set max width
-              height: 200,  // Set max height
-              fit: 'inside', // Ensure the image fits within these dimensions while maintaining the aspect ratio
-            })
-            .toBuffer();
-
-          // Now proceed with adding the watermark to the resized image
-          const resizedWatermarkedImageBuffer = await sharp(resizedImageBuffer)
-            .composite([{ input: watermarkBuffer, gravity: 'southeast' }]) // Position watermark
-            .png()
-            .toBuffer();
-
-          // Further process the image (e.g., add text overlay or upload to Cloudinary)
-          await sharp(resizedWatermarkedImageBuffer)
-            .composite([{
-              input: Buffer.from(`
-        <svg width="500" height="150" xmlns="http://www.w3.org/2000/svg">
-          <text x="50%" y="50%" font-size="40" fill="white" font-family="Arial" stroke="black" stroke-width="1"
-                text-anchor="middle" dominant-baseline="middle">
-            ${shop.name}
-          </text>
-        </svg>
-        `),
-              gravity: 'center',
-            }])
-            .png()
-            .toFile(watermarkedImagePath);  // Save final image
+          // Process the image with watermark and text overlay
+          await processImageWithWatermark(
+            imageBuffer,
+            watermarkBuffer,
+            shop.name,
+            watermarkedImagePath
+          );
 
           // Upload watermarked image to Cloudinary
           const result = await cloudinary.v2.uploader.upload(watermarkedImagePath, {
             folder: "products",
+            compression: "lossless", // Set compression to lossless
+            // width: 800, // Desired width
+            // height: 600, // Desired height
+            crop: "fit", // Cropping mode
+            gravity: "center" // Gravity parameter
           });
 
           imagesLinks.push({
@@ -150,7 +132,6 @@ router.post(
     }
   })
 );
-
 // get all products of a shop
 router.get(
   "/get-all-products-shop/:id",
@@ -190,7 +171,6 @@ router.get(
   })
 );
 
-
 // delete product of a shop
 router.delete(
   "/delete-shop-product/:id",
@@ -200,26 +180,37 @@ router.delete(
       const product = await Product.findById(req.params.id);
 
       if (!product) {
-        return next(new ErrorHandler("Product is not found with this id", 404));
+        return next(new ErrorHandler("Product not found with this id", 404));
       }
 
-      for (let i = 0; 1 < product.images.length; i++) {
-        const result = await cloudinary.v2.uploader.destroy(
-          product.images[i].public_id
-        );
+      console.log('Product found:', product);
+
+      // Deleting all associated images from Cloudinary
+      for (let i = 0; i < product.images.length; i++) {
+        const image = product.images[i];
+
+        // Check if public_id exists before attempting to delete
+        if (image.public_id) {
+          await cloudinary.v2.uploader.destroy(image.public_id);
+          console.log(`Deleted image with public_id: ${image.public_id}`);
+        }
       }
 
-      await product.remove();
+      // Now delete the product from the database
+      await product.deleteOne(); // Replacing .remove() with .deleteOne()
 
+      // Send success response
       res.status(201).json({
         success: true,
-        message: "Product Deleted successfully!",
+        message: "Product deleted successfully!",
       });
     } catch (error) {
-      return next(new ErrorHandler(error, 400));
+      console.error('Error deleting product:', error);
+      return next(new ErrorHandler(error.message || "Failed to delete product", 400));
     }
   })
 );
+
 
 // get all products
 router.get(
@@ -354,23 +345,107 @@ router.put(
   })
 );
 
-// Update product route
-// router.put('/update-product/:id', async (req, res) => {
-//   const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-//   res.json(product);
-// });
+  // Update product route
+  // router.put('/update-product/:id', async (req, res) => {
+  //   const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  //   res.json(product);
+  // });
+
+/**
+ * Function to process an image with both an image watermark and a text overlay.
+ * @param {Buffer} imageBuffer - The buffer of the base image.
+ * @param {Buffer} watermarkBuffer - The buffer of the watermark image.
+ * @param {String} shopName - The name of the shop to be used in the text watermark.
+ * @param {String} outputPath - The output path for the watermarked image.
+
+ */ const processImageWithWatermark = async (imageBuffer, watermarkBuffer, shopName, outputPath) => {
+  try {
+    // Load the base image using sharp
+    const baseImage = sharp(imageBuffer);
+    const baseMetadata = await baseImage.metadata();
+
+    // Set the desired maximum dimensions for resizing the base image
+    const MAX_WIDTH = 800; // You can adjust this
+    const MAX_HEIGHT = 600; // You can adjust this
+
+    // Calculate the new dimensions while maintaining aspect ratio
+    let width = baseMetadata.width;
+    let height = baseMetadata.height;
+
+    if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+      const aspectRatio = width / height;
+      if (width > height) {
+        width = MAX_WIDTH;
+        height = Math.floor(MAX_WIDTH / aspectRatio);
+      } else {
+        height = MAX_HEIGHT;
+        width = Math.floor(MAX_HEIGHT * aspectRatio);
+      }
+    }
+
+    // If dimensions are smaller than MAX_WIDTH and MAX_HEIGHT, use the original dimensions
+    const finalWidth = baseMetadata.width < MAX_WIDTH ? baseMetadata.width : width;
+    const finalHeight = baseMetadata.height < MAX_HEIGHT ? baseMetadata.height : height;
+
+
+    // Calculate watermark dimensions to be at most 30% of the base image
+    const watermarkMaxWidth = Math.floor(width * 0.3);
+    const watermarkMaxHeight = Math.floor(height * 0.3);
+
+    // Resize the watermark to fit within the calculated 30% size
+    const resizedWatermarkBuffer = await sharp(watermarkBuffer)
+      .resize({
+        width: watermarkMaxWidth,
+        height: watermarkMaxHeight,
+        fit: 'inside', // Ensure aspect ratio is maintained
+      })
+      .toBuffer();
+
+    // Composite the watermark onto the resized base image
+    // Resize the base image only if necessary
+    const watermarkedImageBuffer = await baseImage
+      .resize(finalWidth, finalHeight, { fit: 'contain' }) // Only resize if necessary
+      .composite([{
+        input: resizedWatermarkBuffer,
+        gravity: 'southeast', // Position watermark at bottom-right corner
+        blend: 'over',
+        opacity: 0.7
+      }])
+      .toBuffer();
+
+
+    // Save or upload the watermarked image
+    // await sharp(watermarkedImageBuffer)
+    //   .png({
+    //     quality: 80, // Compression quality (adjust between 50-90)
+    //     compressionLevel: 9 // Maximum compression level
+    //   })
+    //   .toFile(outputPath);
+    await sharp(watermarkedImageBuffer)
+  .jpeg({
+    quality: 80, // Adjust JPEG quality to balance size and quality
+    progressive: true, // Progressive rendering for faster loading
+  })
+  .toFile(outputPath);
+
+
+    console.log('Image processed and saved with watermark');
+  } catch (error) {
+    console.error('Error processing image:', error);
+    throw error;
+  }
+};
+
 router.put('/update-product/:id', async (req, res) => {
   try {
-
     const shopId = req.body.shopId;
     const shop = await Shop.findById(shopId);
+
     // Find the product by id
     const existingProduct = await Product.findById(req.params.id);
     if (!existingProduct) {
       return res.status(404).json({ message: "Product not found!" });
     }
-
-    console.log('existing', existingProduct);
 
     // Delete old images from Cloudinary
     if (existingProduct.images && existingProduct.images.length > 0) {
@@ -389,8 +464,6 @@ router.put('/update-product/:id', async (req, res) => {
       images = req.body.images || [];
     }
 
-
-    console.log('existing images', images);
     const imagesLinks = [];
 
     // Ensure temp directory exists
@@ -399,6 +472,7 @@ router.put('/update-product/:id', async (req, res) => {
       fs.mkdirSync(tempDir);
     }
 
+    // Fetch watermark image from URL and convert to buffer
     const watermarkUrl = 'https://indazetu.com/static/media/footer-removebg-preview.5143febfbbe3be17120f.png';
     const watermarkResponse = await axios({
       url: watermarkUrl,
@@ -407,47 +481,45 @@ router.put('/update-product/:id', async (req, res) => {
     const watermarkBuffer = Buffer.from(watermarkResponse.data, 'binary');
 
     for (let i = 0; i < images.length; i++) {
-  if (images[i].startsWith('data:image/')) {
-      const imageBuffer = Buffer.from(images[i].replace(/^data:image\/\w+;base64,/, ""), 'base64');
-      const watermarkedImagePath = `${tempDir}watermarked_${i}.png`;
+      if (images[i].startsWith('data:image/')) {
+        // Convert base64 image to buffer
+        const base64Image = images[i];
+        const imageBuffer = Buffer.from(base64Image.replace(/^data:image\/\w+;base64,/, ""), 'base64');
 
-      // Create the base image and resize the watermark
-      await sharp(imageBuffer)
-          .resize({ width: 800, height: 800, fit: 'inside' }) // Resize main image
-          .toBuffer()
-          .then(async (bufferedImage) => {
-              // Get the dimensions of the main image
-              const { width, height } = await sharp(bufferedImage).metadata();
+        const watermarkedImagePath = `${tempDir}watermarked_${i}.png`;
 
-              // Resize watermark to fit the main image (optional: you can keep the aspect ratio)
-              const resizedWatermarkBuffer = await sharp(watermarkBuffer)
-                  .resize({
-                      width: Math.floor(width * 0.5), // Resize to 50% of the main image width
-                      height: Math.floor(height * 0.5), // Resize to 50% of the main image height
-                      fit: 'inside'
-                  })
-                  .toBuffer();
 
-              // Composite the watermark on top of the main image
-              await sharp(bufferedImage)
-                  .composite([{ input: resizedWatermarkBuffer, gravity: 'southeast' }])
-                  .png()
-                  .toFile(watermarkedImagePath);
-          });
+        // Process the image with the watermark
+        await processImageWithWatermark(
+          imageBuffer,
+          watermarkBuffer,
+          shop.name,
+          watermarkedImagePath
+        );
 
-      // Upload to Cloudinary
-      const result = await cloudinary.v2.uploader.upload(watermarkedImagePath, {
+        const baseImage = sharp(imageBuffer);
+        const baseMetadata = await baseImage.metadata();
+        // Upload to Cloudinary with lossless compression
+        const result = await cloudinary.v2.uploader.upload(watermarkedImagePath, {
           folder: "products",
-      });
-
-      imagesLinks.push({
+          format: "jpg", // Force JPEG format for smaller sizes
+          transformation: [
+            baseMetadata.width > 800 || baseMetadata.height > 600
+              ? { width: 800, height: 600, crop: "fit" }
+              : {},
+            { quality: "auto:eco" }
+          ],
+        });
+        imagesLinks.push({
           public_id: result.public_id,
           url: result.secure_url,
-      });
+        });
 
-      fs.unlinkSync(watermarkedImagePath);
+        // Remove the temporary watermarked image file
+        fs.unlinkSync(watermarkedImagePath);
 
       } else if (images[i].startsWith('https://res.cloudinary.com')) {
+        // If the image is already hosted on Cloudinary, just reuse the existing link
         const public_id = images[i].split('/').pop().split('.')[0];
         imagesLinks.push({
           public_id: public_id,
@@ -468,18 +540,14 @@ router.put('/update-product/:id', async (req, res) => {
       { new: true }
     );
 
-    console.log('Updated Product:', updatedProduct);
-
-
     res.status(200).json({
       success: true,
       product: updatedProduct,
-      message: "Product Update successful!",
+      message: "Product updated successfully!",
     });
+
   } catch (err) {
     console.error('Error updating product:', err);
     res.status(500).json({ message: 'Server Error' });
   }
-});
-
-module.exports = router;
+}); module.exports = router;
