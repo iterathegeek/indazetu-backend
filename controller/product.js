@@ -345,11 +345,11 @@ router.put(
   })
 );
 
-  // Update product route
-  // router.put('/update-product/:id', async (req, res) => {
-  //   const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  //   res.json(product);
-  // });
+// Update product route
+// router.put('/update-product/:id', async (req, res) => {
+//   const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+//   res.json(product);
+// });
 
 /**
  * Function to process an image with both an image watermark and a text overlay.
@@ -358,15 +358,16 @@ router.put(
  * @param {String} shopName - The name of the shop to be used in the text watermark.
  * @param {String} outputPath - The output path for the watermarked image.
 
- */ const processImageWithWatermark = async (imageBuffer, watermarkBuffer, shopName, outputPath) => {
+ */
+const processImageWithWatermark = async (imageBuffer, watermarkBuffer, shopName, outputPath) => {
   try {
-    // Load the base image using sharp
-    const baseImage = sharp(imageBuffer);
+    // Load the base image using sharp and ensure it's in a compatible format
+    const baseImage = sharp(imageBuffer).toFormat('jpeg');
     const baseMetadata = await baseImage.metadata();
-
+    iN6kAwZy
     // Set the desired maximum dimensions for resizing the base image
-    const MAX_WIDTH = 800; // You can adjust this
-    const MAX_HEIGHT = 600; // You can adjust this
+    const MAX_WIDTH = 800;
+    const MAX_HEIGHT = 600;
 
     // Calculate the new dimensions while maintaining aspect ratio
     let width = baseMetadata.width;
@@ -383,51 +384,52 @@ router.put(
       }
     }
 
-    // If dimensions are smaller than MAX_WIDTH and MAX_HEIGHT, use the original dimensions
     const finalWidth = baseMetadata.width < MAX_WIDTH ? baseMetadata.width : width;
     const finalHeight = baseMetadata.height < MAX_HEIGHT ? baseMetadata.height : height;
 
-
-    // Calculate watermark dimensions to be at most 30% of the base image
-    const watermarkMaxWidth = Math.floor(width * 0.3);
-    const watermarkMaxHeight = Math.floor(height * 0.3);
-
-    // Resize the watermark to fit within the calculated 30% size
+    // Resize watermark
     const resizedWatermarkBuffer = await sharp(watermarkBuffer)
       .resize({
-        width: watermarkMaxWidth,
-        height: watermarkMaxHeight,
-        fit: 'inside', // Ensure aspect ratio is maintained
+        width: Math.floor(width * 0.3),
+        height: Math.floor(height * 0.3),
+        fit: 'inside',
       })
       .toBuffer();
 
-    // Composite the watermark onto the resized base image
-    // Resize the base image only if necessary
+    // Create text overlay as a buffer
+    const svgText = `
+      <svg width="${finalWidth}" height="${finalHeight}">
+        <text x="50%" y="50%" font-size="25" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-family="Arial, sans-serif" dy=".3em">
+          ${shopName}
+        </text>
+      </svg>
+    `;
+    const textBuffer = Buffer.from(svgText);
+
+    // Composite the watermark and text onto the resized base image
     const watermarkedImageBuffer = await baseImage
-      .resize(finalWidth, finalHeight, { fit: 'contain' }) // Only resize if necessary
-      .composite([{
-        input: resizedWatermarkBuffer,
-        gravity: 'southeast', // Position watermark at bottom-right corner
-        blend: 'over',
-        opacity: 0.7
-      }])
+      .resize(finalWidth, finalHeight, { fit: 'contain' })
+      .composite([
+        {
+          input: resizedWatermarkBuffer,
+          gravity: 'southeast',
+          blend: 'over',
+          opacity: 0.7,
+        },
+        {
+          input: textBuffer,
+          blend: 'over',
+        },
+      ])
       .toBuffer();
 
-
-    // Save or upload the watermarked image
-    // await sharp(watermarkedImageBuffer)
-    //   .png({
-    //     quality: 80, // Compression quality (adjust between 50-90)
-    //     compressionLevel: 9 // Maximum compression level
-    //   })
-    //   .toFile(outputPath);
+    // Save the watermarked image
     await sharp(watermarkedImageBuffer)
-  .jpeg({
-    quality: 80, // Adjust JPEG quality to balance size and quality
-    progressive: true, // Progressive rendering for faster loading
-  })
-  .toFile(outputPath);
-
+      .jpeg({
+        quality: 80,
+        progressive: true,
+      })
+      .toFile(outputPath);
 
     console.log('Image processed and saved with watermark');
   } catch (error) {
