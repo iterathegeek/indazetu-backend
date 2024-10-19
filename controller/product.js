@@ -358,16 +358,15 @@ router.put(
  * @param {String} shopName - The name of the shop to be used in the text watermark.
  * @param {String} outputPath - The output path for the watermarked image.
 
- */
-const processImageWithWatermark = async (imageBuffer, watermarkBuffer, shopName, outputPath) => {
+ */ const processImageWithWatermark = async (imageBuffer, watermarkBuffer, shopName, outputPath) => {
   try {
     // Load the base image using sharp
     const baseImage = sharp(imageBuffer);
     const baseMetadata = await baseImage.metadata();
 
     // Set the desired maximum dimensions for resizing the base image
-    const MAX_WIDTH = 800;
-    const MAX_HEIGHT = 600;
+    const MAX_WIDTH = 800; // You can adjust this
+    const MAX_HEIGHT = 600; // You can adjust this
 
     // Calculate the new dimensions while maintaining aspect ratio
     let width = baseMetadata.width;
@@ -388,9 +387,10 @@ const processImageWithWatermark = async (imageBuffer, watermarkBuffer, shopName,
     const finalWidth = baseMetadata.width < MAX_WIDTH ? baseMetadata.width : width;
     const finalHeight = baseMetadata.height < MAX_HEIGHT ? baseMetadata.height : height;
 
+
     // Calculate watermark dimensions to be at most 30% of the base image
-    const watermarkMaxWidth = Math.floor(finalWidth * 0.3);
-    const watermarkMaxHeight = Math.floor(finalHeight * 0.3);
+    const watermarkMaxWidth = Math.floor(width * 0.3);
+    const watermarkMaxHeight = Math.floor(height * 0.3);
 
     // Resize the watermark to fit within the calculated 30% size
     const resizedWatermarkBuffer = await sharp(watermarkBuffer)
@@ -401,56 +401,35 @@ const processImageWithWatermark = async (imageBuffer, watermarkBuffer, shopName,
       })
       .toBuffer();
 
-    // Create a canvas with the shop name text
-    const textBuffer = await sharp({
-      create: {
-        width: finalWidth,
-        height: finalHeight,
-        channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 } // Transparent background
-      }
-    })
-      .composite([
-        {
-          input: Buffer.from(
-            `<svg width="${finalWidth}" height="${finalHeight}">
-              <text x="50%" y="50%" font-size="36" text-anchor="middle" fill="rgba(255, 255, 255, 0.7)" font-family="Arial, sans-serif" dy=".3em">
-                ${shopName}
-              </text>
-            </svg>`
-          ),
-          top: 0,
-          left: 0
-        }
-      ])
+    // Composite the watermark onto the resized base image
+    // Resize the base image only if necessary
+    const watermarkedImageBuffer = await baseImage
+      .resize(finalWidth, finalHeight, { fit: 'contain' }) // Only resize if necessary
+      .composite([{
+        input: resizedWatermarkBuffer,
+        gravity: 'southeast', // Position watermark at bottom-right corner
+        blend: 'over',
+        opacity: 0.7
+      }])
       .toBuffer();
 
-    // Composite the watermark and text onto the resized base image
-    const watermarkedImageBuffer = await baseImage
-      .resize(finalWidth, finalHeight, { fit: 'contain' })
-      .composite([
-        {
-          input: resizedWatermarkBuffer,
-          gravity: 'southeast', // Position watermark at bottom-right corner
-          blend: 'over',
-          opacity: 0.7
-        },
-        {
-          input: textBuffer,
-          blend: 'over'
-        }
-      ])
-      .toBuffer();
 
     // Save or upload the watermarked image
+    // await sharp(watermarkedImageBuffer)
+    //   .png({
+    //     quality: 80, // Compression quality (adjust between 50-90)
+    //     compressionLevel: 9 // Maximum compression level
+    //   })
+    //   .toFile(outputPath);
     await sharp(watermarkedImageBuffer)
-      .jpeg({
-        quality: 80, // Adjust JPEG quality to balance size and quality
-        progressive: true, // Progressive rendering for faster loading
-      })
-      .toFile(outputPath);
+  .jpeg({
+    quality: 80, // Adjust JPEG quality to balance size and quality
+    progressive: true, // Progressive rendering for faster loading
+  })
+  .toFile(outputPath);
 
-    console.log('Image processed and saved with watermark and shop name');
+
+    console.log('Image processed and saved with watermark');
   } catch (error) {
     console.error('Error processing image:', error);
     throw error;
